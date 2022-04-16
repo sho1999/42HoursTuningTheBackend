@@ -257,24 +257,29 @@ const tomeActive = async (req, res) => {
   }
 
   let searchRecordQs =
-    'select * from record where status = "open" and (category_id, application_group) in (';
+    `select * from record where status = "open" and
+     (category_id, application_group)
+      in (select category_id, application_group
+      from category_group
+      where group_id in (select group_id from group_member where user_id = ?))
+      order by updated_at desc, record_id  limit ? offset ? `;
   let recordCountQs =
-    'select count(*) from record where status = "open" and (category_id, application_group) in (';
+    `select
+       count(*)
+     from
+       (select user_id, group_id from group_member where user_id = ?) t1
+       inner join
+         category_group t2
+         on
+           t1.group_id = t2.group_id
+       inner join
+         (select * from record where status = "open") record
+         on
+           record.category_id = t2.category_id
+           and record.application_group = t2.application_group `;
   const param = [];
 
-  for (let i = 0; i < targetCategoryAppGroupList.length; i++) {
-    if (i !== 0) {
-      searchRecordQs += ', (?, ?)';
-      recordCountQs += ', (?, ?)';
-    } else {
-      searchRecordQs += ' (?, ?)';
-      recordCountQs += ' (?, ?)';
-    }
-    param.push(targetCategoryAppGroupList[i].categoryId);
-    param.push(targetCategoryAppGroupList[i].applicationGroup);
-  }
-  searchRecordQs += ' ) order by updated_at desc, record_id  limit ? offset ?';
-  recordCountQs += ' )';
+  param.push(user.user_id)
   param.push(limit);
   param.push(offset);
   mylog(searchRecordQs);
