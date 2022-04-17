@@ -239,7 +239,7 @@ const tomeActive = async (req, res) => {
 t1.record_id, t1.title, t1.created_by, t1.application_group,
        t1.created_at, t1.updated_at,
        user.name as user_name, group_info.name as group_name,
-       t2.item_id, t3.count, record_last_access.access_time
+       record_last_access.access_time
 from
 (select record_id, title, created_by, application_group,
        created_at, updated_at, ? as user_id
@@ -254,16 +254,6 @@ inner join
 user on user.user_id = t1.created_by
 inner join
 group_info on group_info.group_id = t1.application_group
-left outer join
-        (select linked_record_id, item_id,
-                row_number() over (partition by linked_record_id order by item_id) as rn
-         from record_item_file) t2
-        on t2.linked_record_id = t1.record_id
-           and rn = 1 
-left outer join
-        (select count(*) as count, linked_record_id from record_comment group by linked_record_id) t3
-      on
-        t3.linked_record_id = t1.record_id
 left outer join
         record_last_access
       on
@@ -346,18 +336,18 @@ left outer join
       //mylog("name " + line.user_name);
       //mylog("name " + line.group_name);
 
-    // const [itemResult] = await pool.query(searchThumbQs, [recordId]);
-    // if (itemResult.length === 1) {
-    //   thumbNailItemId = itemResult[0].item_id;
-    // }
-    //   mylog(thumbNailItemId);
-    //   mylog(line.item_id);
+    const [itemResult] = await pool.query(searchThumbQs, [recordId]);
+    if (itemResult.length === 1) {
+      thumbNailItemId = itemResult[0].item_id;
+    }
+      mylog(thumbNailItemId);
+      mylog(line.item_id);
       
 
-    // const [countResult] = await pool.query(countQs, [recordId]);
-    // if (countResult.length === 1) {
-    //   commentCount = countResult[0]['count(*)'];
-    // }
+    const [countResult] = await pool.query(countQs, [recordId]);
+    if (countResult.length === 1) {
+      commentCount = countResult[0]['count(*)'];
+    }
 
     //const [lastResult] = await pool.query(searchLastQs, [user.user_id, recordId]);
       const updatedAtNum = Date.parse(updatedAt);
