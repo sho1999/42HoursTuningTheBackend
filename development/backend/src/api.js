@@ -235,12 +235,24 @@ const tomeActive = async (req, res) => {
 
 
   let searchRecordQs =
-    `select record_id, title, created_by, application_group, created_at, updated_at, ? as user_name from record where status = "open" and
-     (category_id, application_group)
-      in (select category_id, application_group
+    `select
+t1.record_id, t1.title, t1.created_by, t1.application_group,
+       t1.created_at, t1.updated_at,
+       user.name as user_name, group_info.name as group_name
+from
+(select record_id, title, created_by, application_group,
+       created_at, updated_at, ? as user_id
+       from record
+       where status = "open" and
+     (category_id, application_group) in (select category_id, application_group
       from category_group
       where group_id in (select group_id from group_member where user_id = ?))
-      order by updated_at desc, record_id  limit ? offset ? `;
+      order by updated_at desc, record_id  limit ? offset ? 
+) t1
+inner join
+user on user.user_id = t1.created_by
+inner join
+group_info on group_info.group_id = t1.application_group `;
   let recordCountQs =
     `select
        count(*)
@@ -298,21 +310,25 @@ const tomeActive = async (req, res) => {
     const createdBy = line.created_by;
     const applicationGroup = line.application_group;
     const updatedAt = line.updated_at;
-    let createdByName = null;
-    let applicationGroupName = null;
+    let createdByName = line.user_name;
+    let applicationGroupName = line.group_name;
     let thumbNailItemId = null;
     let commentCount = 0;
     let isUnConfirmed = true;
 
-    const [userResult] = await pool.query(searchUserQs, [createdBy]);
-    if (userResult.length === 1) {
-      createdByName = userResult[0].name;
-    }
+    // const [userResult] = await pool.query(searchUserQs, [createdBy]);
+    // if (userResult.length === 1) {
+    //   createdByName = userResult[0].name;
+    // }
 
-    const [groupResult] = await pool.query(searchGroupQs, [applicationGroup]);
-    if (groupResult.length === 1) {
-      applicationGroupName = groupResult[0].name;
-    }
+    // const [groupResult] = await pool.query(searchGroupQs, [applicationGroup]);
+    // if (groupResult.length === 1) {
+    //   applicationGroupName = groupResult[0].name;
+    // }
+      // mylog("name " + createdByName);
+      // mylog("name " + applicationGroupName);
+      mylog("name " + line.user_name);
+      mylog("name " + line.group_name);
 
     const [itemResult] = await pool.query(searchThumbQs, [recordId]);
     if (itemResult.length === 1) {
