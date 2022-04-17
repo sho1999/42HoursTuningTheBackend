@@ -7,3 +7,4 @@ alter table record add index record_idx_03 (created_by, status);
 alter table record add index record_idx_04 (category_id, application_group);
 alter table record_item_file add index record_item_file_idx_01 (linked_record_id);
 alter table record_item_file add index record_item_file_idx_02 (item_id);
+set global max_connections = 250;
